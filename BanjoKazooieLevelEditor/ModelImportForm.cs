@@ -7491,7 +7491,7 @@ namespace BanjoKazooieLevelEditor
       this.Controls.Add((Control) this.CamSpeed_tb);
       this.Controls.Add((Control) this.label3);
       this.Controls.Add((Control) this.menuStrip1);
-      this.FormBorderStyle = FormBorderStyle.FixedDialog;
+      //this.FormBorderStyle = FormBorderStyle.FixedDialog;  // BEN: Commented out, so window is resizable
       this.MainMenuStrip = this.menuStrip1;
       this.MinimizeBox = false;
       this.Name = nameof (ModelImportForm);

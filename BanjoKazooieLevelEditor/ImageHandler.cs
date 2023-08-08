@@ -28,8 +28,10 @@ namespace BanjoKazooieLevelEditor
         bitmapArray[frameIndex] = new Bitmap(image.Size.Width, image.Size.Height);
         Graphics.FromImage((Image) bitmapArray[frameIndex]).DrawImage(image, new Point(0, 0));
         Bitmap bitmap = new Bitmap(32, 32, PixelFormat.Format32bppArgb);
+        //Bitmap bitmap = new Bitmap(image.Size.Width, image.Size.Height, PixelFormat.Format32bppArgb); // BEN: TODO: Remove Hardcoded 32x32 size
         using (Graphics graphics = Graphics.FromImage((Image) bitmap))
-          graphics.DrawImage((Image) bitmapArray[frameIndex], new Rectangle(0, 0, 32, 32));
+        //graphics.DrawImage((Image) bitmapArray[frameIndex], new Rectangle(0, 0, image.Size.Width, image.Size.Height));  // BEN: TODO: Remove Hardcoded 32x32 size
+        graphics.DrawImage((Image) bitmapArray[frameIndex], new Rectangle(0, 0, 32, 32));
         bitmapArray[frameIndex] = bitmap;
         bitmapArray[frameIndex] = ImageHandler.ConvertTo256Colour(bitmapArray[frameIndex]);
       }

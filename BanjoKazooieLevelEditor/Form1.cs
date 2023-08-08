@@ -1024,6 +1024,7 @@ namespace BanjoKazooieLevelEditor
 
     private void save_tsmi_Click(object sender, EventArgs e)
     {
+      UpdateTitleBar("Saving..."); // BEN: Saving without interruption. 
       try
       {
         int num = 0;
@@ -1117,7 +1118,9 @@ namespace BanjoKazooieLevelEditor
         process.Close();
         this.cleanOutDir();
         RomHandler.Rom = this.rom;
-        int num = (int) MessageBox.Show("Changes saved successfully");
+        //BEN: Saving without interruption:
+        //int num = (int) MessageBox.Show("Changes saved successfully");
+        UpdateTitleBar();
         this.locateEORFiles();
       }
       catch (Exception ex)
@@ -1456,6 +1459,18 @@ namespace BanjoKazooieLevelEditor
         this.cameraMode = true;
         this.cam_yaw_btn.BackColor = this.active;
       }
+    }
+
+    // Ben: Functions to create the TitleBar with the Rom Filepath and name
+    private void UpdateTitleBar(string text)
+    {
+      StreamReader streamReader = new StreamReader(Application.StartupPath + "\\resources\\mw.ini");
+      this.Text = ("Banjo's Backpack: " + streamReader.ReadToEnd() + " " + text);
+    }
+    private void UpdateTitleBar()
+    {
+      StreamReader streamReader = new StreamReader(Application.StartupPath + "\\resources\\mw.ini");
+      this.Text = ("Banjo's Backpack: " + streamReader.ReadToEnd());
     }
 
     private void togglePitchMode()
@@ -2869,7 +2884,7 @@ namespace BanjoKazooieLevelEditor
       Mode selectedIndex = (Mode) this.mode_cb.SelectedIndex;
       this.sceneClick = true;
       this.forceRedraw = true;
-      if (e.Button == MouseButtons.Right)
+      if (e.Button == MouseButtons.Left) // Change to Left
       {
         switch (selectedIndex)
         {
@@ -3071,7 +3086,7 @@ namespace BanjoKazooieLevelEditor
           }
         }
       }
-      if (e.Button != MouseButtons.Left)
+      if (e.Button != MouseButtons.Right) // Change to Right
         return;
       if (this.rectSelectMode)
       {
@@ -3088,7 +3103,7 @@ namespace BanjoKazooieLevelEditor
     private void LevelViewer_MouseUp(object sender, MouseEventArgs e)
     {
       this.sceneClick = false;
-      if (e.Button == MouseButtons.Left)
+      if (e.Button == MouseButtons.Right) // Change to Right
       {
         this.RotateSceneClick = false;
         if (!this.rectSelect)
@@ -3137,31 +3152,47 @@ namespace BanjoKazooieLevelEditor
     {
       if (e.Alt)
         return;
+
+      if (e.Shift)
+      {
+        switch (e.KeyCode)
+        {
+          case Keys.D1: this.mode_cb.SelectedIndex = 0; break;
+          case Keys.D2: this.mode_cb.SelectedIndex = 1; break;
+          case Keys.D3: this.mode_cb.SelectedIndex = 2; break;
+          case Keys.D4: this.mode_cb.SelectedIndex = 3; break;
+        }
+      }
       switch (e.KeyCode)
       {
         case Keys.ShiftKey:
         case Keys.Shift:
-          this.multiselect = true;
-          break;
-        case Keys.A:
-          this.right = true;
-          break;
-        case Keys.D:
-          this.left = true;
-          break;
-        case Keys.E:
-          this.zoomOut = true;
-          break;
-        case Keys.Q:
-          this.zoomIn = true;
-          break;
-        case Keys.S:
-          this.zoomOut = true;
-          break;
-        case Keys.W:
-          this.zoomIn = true;
-          break;
+          this.multiselect = true; break;
+        // Ben: Shortcuts (local) that are only active when in the level viewer view (not when typing into value fields)
+        case Keys.A:                                                                              this.right = true; break;
+        case Keys.D:                                                                              this.left = true; break;
+        case Keys.S:                                                                              this.zoomOut = true; break;
+        case Keys.W:                                                                              this.zoomIn = true; break;
+        case Keys.Escape:                                                                         this.clearSelection(); break;
+        case Keys.Delete:           if(this.delete_btn.Enabled && this.delete_btn.Visible)        this.deleteSelected(); break;
+        case Keys.B:                if(this.rectSelect_btn.Enabled)                               this.toggleRectSelect(); break;
+        case Keys.D1: case Keys.M:  if(this.obj_move_btn.Enabled && this.obj_move_btn.Visible)    this.toggleMoveMode(); break;
+        case Keys.D2: case Keys.R:  if(this.obj_rot_btn.Enabled && this.obj_rot_btn.Visible)      this.toggleRotateMode(); break;
+        case Keys.D3:               if(this.obj_scale_btn.Enabled && this.obj_scale_btn.Visible)  this.toggleScaleMode(); break;
+        case Keys.D4:       if(this.obj_duplicate_btn.Enabled && this.obj_duplicate_btn.Visible)  this.toggleDuplicateMode(); break;
       }
+      //if (!e.Shift && e.KeyCode == Keys.Q) // BEN: Toggle through the modes forward
+      //{
+      //  if (this.mode_cb.Items.Count == this.mode_cb.SelectedIndex + 1) this.mode_cb.SelectedIndex = 0;
+      //  else this.mode_cb.SelectedIndex += 1;
+      //  this.mode_cb_SelectedIndexChanged();
+      //}
+      //if (e.Shift && e.KeyCode == Keys.Q) // BEN: Toggle through the modes backwards
+      //{
+      //  if (this.mode_cb.SelectedIndex - 1 < 0) this.mode_cb.SelectedIndex = this.mode_cb.Items.Count-1;
+      //  else this.mode_cb.SelectedIndex -= 1;
+      //  this.mode_cb_SelectedIndexChanged();
+      //}
     }
 
     private void LevelViewer_KeyUp(object sender, KeyEventArgs e)
@@ -4013,8 +4044,9 @@ namespace BanjoKazooieLevelEditor
         byte[] numArray = new byte[length1];
         binaryReader.BaseStream.Read(numArray, 0, (int) length1);
         binaryReader.Close();
-        if (numArray[59] != (byte) 78 || numArray[60] != (byte) 66 || numArray[61] != (byte) 75 || numArray[62] != (byte) 69 || numArray[63] != (byte) 0)
-          return MessageBox.Show("Please open a Banjo Kazooie V1.0 NTSC rom", "Invalid Rom", MessageBoxButtons.RetryCancel) == DialogResult.Retry ? 1 : 0;
+        // BEN: Commeted out in order to try to open PAL Rom. But this does not work
+        //if (numArray[59] != (byte) 78 || numArray[60] != (byte) 66 || numArray[61] != (byte) 75 || numArray[62] != (byte) 69 || numArray[63] != (byte) 0)
+        //  return MessageBox.Show("Please open a Banjo Kazooie V1.0 NTSC rom", "Invalid Rom", MessageBoxButtons.RetryCancel) == DialogResult.Retry ? 1 : 0;
         if (numArray.Length <= 16781312)
         {
           if (MessageBox.Show("This rom has not been extended in order to use it with Banjo's Backpack the rom will need to be extended, would you like to extend the rom now?" + Environment.NewLine + "BB will open the extended rom automatically once completed", "Extend Rom?", MessageBoxButtons.YesNo) == DialogResult.Yes)
@@ -4100,6 +4132,9 @@ namespace BanjoKazooieLevelEditor
         this.world.getRomStats(this.F9CAE0);
         this.getEntryPoints();
         this.AssociateScenesWithLevels();
+
+        // BEN: Add rom path to title bar when loading with the file dialog
+        UpdateTitleBar();
         return 2;
       }
       catch (Exception ex)
@@ -4156,7 +4191,7 @@ namespace BanjoKazooieLevelEditor
 
     private void Form1_MouseUp(object sender, MouseEventArgs e)
     {
-      if (e.Button == MouseButtons.Left)
+      if (e.Button == MouseButtons.Right) // Change to Right
         this.RotateSceneClick = false;
       else
         this.disableAllSubModes();
@@ -4305,27 +4340,8 @@ namespace BanjoKazooieLevelEditor
       int num = (int) MessageBox.Show("Rom Updated");
     }
 
-    private void Form1_KeyDown(object sender, KeyEventArgs e)
+    private void Form1_KeyDown(object sender, KeyEventArgs e) // Ben: Shortcuts (Global)
     {
-      if (e.Alt && e.KeyCode == Keys.M && this.obj_move_btn.Enabled && this.obj_move_btn.Visible)
-      {
-        if (this.selectMode)
-          this.toggleMoveMode();
-        if (this.cameraMode)
-          this.toggleCamMoveMode();
-      }
-      if (e.Control && e.KeyCode == Keys.B && this.rectSelect_btn.Enabled)
-        this.toggleRectSelect();
-      if (e.Alt && e.KeyCode == Keys.R && this.obj_rot_btn.Enabled && this.obj_rot_btn.Visible)
-        this.toggleRotateMode();
-      if (e.Alt && e.KeyCode == Keys.S && this.obj_scale_btn.Enabled && this.obj_scale_btn.Visible)
-        this.toggleScaleMode();
-      if (e.Alt && e.KeyCode == Keys.D && this.obj_duplicate_btn.Enabled && this.obj_duplicate_btn.Visible)
-        this.toggleDuplicateMode();
-      if (e.Alt && e.KeyCode == Keys.Delete && this.delete_btn.Enabled && this.delete_btn.Visible)
-        this.deleteSelected();
-      if (e.KeyCode == Keys.Escape && this.deselect_btn.Enabled && this.deselect_btn.Visible)
-        this.clearSelection();
       if (e.Alt && e.KeyCode == Keys.V)
       {
         this.world.BBCameraToBKCamera(this.BBCamera);
@@ -4996,6 +5012,9 @@ namespace BanjoKazooieLevelEditor
     }
 
     private void mode_cb_SelectedIndexChanged(object sender, EventArgs e)
+    { mode_cb_SelectedIndexChanged(); } // BEN: faux function for the event that sends the parameters, but which are not used, see below
+
+    private void mode_cb_SelectedIndexChanged()
     {
       this.clearSelection();
       this.flowLayoutPanel1.SuspendLayout();
@@ -8527,12 +8546,14 @@ namespace BanjoKazooieLevelEditor
       this.Controls.Add((Control) this.menuStrip1);
       this.Controls.Add((Control) this.button3);
       this.Controls.Add((Control) this.flowLayoutPanel1);
-      this.FormBorderStyle = FormBorderStyle.FixedSingle;
+      //this.FormBorderStyle = FormBorderStyle.FixedSingle; // BEN: Commented out, so window is resizable
       this.Icon = (Icon) componentResourceManager.GetObject("$this.Icon");
       this.KeyPreview = true;
       this.MainMenuStrip = this.menuStrip1;
       this.Name = nameof (Form1);
       this.Text = "Banjo's Backpack";
+      // BEN: Add rom path to title bar after auto load of ROM from ini
+      UpdateTitleBar();
       this.FormClosed += new FormClosedEventHandler(this.Form1_FormClosed);
       this.Load += new EventHandler(this.Form1_Load);
       this.ResizeEnd += new EventHandler(this.Form1_ResizeEnd);
