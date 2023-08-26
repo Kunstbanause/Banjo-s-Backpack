@@ -461,6 +461,7 @@ namespace BanjoKazooieLevelEditor
     private GLControl LevelViewer;
     private ToolStripButton cam_moveToCurrent_btn;
     private ToolStripMenuItem spriteManagerToolStripMenuItem;
+    private ToolStripMenuItem runToolStripMenuItem;
 
     private void initializeMenu()
     {
@@ -1023,6 +1024,11 @@ namespace BanjoKazooieLevelEditor
     }
 
     private void save_tsmi_Click(object sender, EventArgs e)
+    {
+      save_tsmi_Click();
+    }
+
+    private void save_tsmi_Click()
     {
       UpdateTitleBar("Saving..."); // BEN: Saving without interruption. 
       try
@@ -2034,45 +2040,47 @@ namespace BanjoKazooieLevelEditor
 
     private void textEditorToolStripMenuItem_Click(object sender, EventArgs e)
     {
-      TextEditorForm textEditorForm = new TextEditorForm(this.tmpDir);
-      int num1 = (int) textEditorForm.ShowDialog();
-      if (!textEditorForm.updateROM)
-        return;
-      this.romBuild.rom = this.rom;
-      this.romBuild.populateEORPointers();
-      this.romBuild.outDir = this.outDir;
-      foreach (string file1 in Directory.GetFiles(this.outTxtDir, "*", SearchOption.AllDirectories))
-      {
-        try
+      //Form2 myForm2 = new Form2();
+      //int num1 = (int) myForm2.ShowDialog();
+        TextEditorForm textEditorForm = new TextEditorForm(this.tmpDir);
+        int num1 = (int) textEditorForm.ShowDialog();
+        if (!textEditorForm.updateROM)
+          return;
+        this.romBuild.rom = this.rom;
+        this.romBuild.populateEORPointers();
+        this.romBuild.outDir = this.outDir;
+        foreach (string file1 in Directory.GetFiles(this.outTxtDir, "*", SearchOption.AllDirectories))
         {
-          string file2 = file1.Remove(0, this.outTxtDir.Length);
-          this.romBuild.insertDecompressedFile(this.outTxtDir, file2, Convert.ToInt32(file2, 16), 0, false);
-          FileStream output = File.Create(this.inRom);
-          BinaryWriter binaryWriter = new BinaryWriter((Stream) output);
-          binaryWriter.Write(this.romBuild.rom);
-          binaryWriter.Close();
-          output.Close();
+          try
+          {
+            string file2 = file1.Remove(0, this.outTxtDir.Length);
+            this.romBuild.insertDecompressedFile(this.outTxtDir, file2, Convert.ToInt32(file2, 16), 0, false);
+            FileStream output = File.Create(this.inRom);
+            BinaryWriter binaryWriter = new BinaryWriter((Stream) output);
+            binaryWriter.Write(this.romBuild.rom);
+            binaryWriter.Close();
+            output.Close();
+          }
+          catch
+          {
+          }
         }
-        catch
-        {
-        }
-      }
-      foreach (string file in Directory.GetFiles(this.outTxtDir, "*", SearchOption.AllDirectories))
-        File.Delete(file);
-      this.rom = this.romBuild.rom;
-      RomHandler.Rom = this.rom;
-      this.locateEORFiles();
-      string str = "rn64crc.exe";
-      Process process = new Process();
-      process.StartInfo.FileName = str;
-      process.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory() + "\\out\\";
-      process.StartInfo.Arguments = "-u \"" + this.inRom + "\"";
-      process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-      process.StartInfo.CreateNoWindow = true;
-      process.Start();
-      process.WaitForExit();
-      process.Close();
-      int num2 = (int) MessageBox.Show(this.inRom + " has been updated");
+        foreach (string file in Directory.GetFiles(this.outTxtDir, "*", SearchOption.AllDirectories))
+          File.Delete(file);
+        this.rom = this.romBuild.rom;
+        RomHandler.Rom = this.rom;
+        this.locateEORFiles();
+        string str = "rn64crc.exe";
+        Process process = new Process();
+        process.StartInfo.FileName = str;
+        process.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory() + "\\out\\";
+        process.StartInfo.Arguments = "-u \"" + this.inRom + "\"";
+        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        process.StartInfo.CreateNoWindow = true;
+        process.Start();
+        process.WaitForExit();
+        process.Close();
+        int num2 = (int) MessageBox.Show(this.inRom + " has been updated");
     }
 
     private void puzzleEditorToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2268,6 +2276,7 @@ namespace BanjoKazooieLevelEditor
       {
       }
       this.save_tsmi.Enabled = true;
+      this.runToolStripMenuItem.Enabled = true;
       this.saveAsRomToolStripMenuItem.Enabled = true;
       this.world.eraseDLs();
       this.world.objects.Clear();
@@ -2295,6 +2304,7 @@ namespace BanjoKazooieLevelEditor
       this.world.file = this.selectedFile;
       this.world.ReadSetupFile(file_);
       this.save_tsmi.Enabled = true;
+      this.runToolStripMenuItem.Enabled = true;
       this.saveSetupFileToolStripMenuItem.Enabled = true;
       this.loadSetupFileToolStripMenuItem.Enabled = true;
       this.listDec = this.world.GetListDec(this.tmpDir + this.selectedFile.pointer.ToString("x"));
@@ -5565,6 +5575,19 @@ namespace BanjoKazooieLevelEditor
       int num2 = (int) MessageBox.Show(this.inRom + " Updated");
     }
 
+    private void runToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      save_tsmi_Click();
+      try
+      {
+        Process.Start("\"" + this.inRom + "\"");
+      }
+      catch (Exception ex)
+      {
+        int num = (int)MessageBox.Show("An error occurred: " + ex.Message);
+      }
+    }
+
     private void redoToolStripMenuItem_Click(object sender, EventArgs e) => this.redo();
 
     private void drawDist_tb_Leave(object sender, EventArgs e) => this.world.drawDistance = Convert.ToSingle(this.drawDist_tb.Text);
@@ -5635,6 +5658,7 @@ namespace BanjoKazooieLevelEditor
       this.injectorInToolStripMenuItem = new ToolStripMenuItem();
       this.sNSEditorToolStripMenuItem = new ToolStripMenuItem();
       this.spriteManagerToolStripMenuItem = new ToolStripMenuItem();
+      this.runToolStripMenuItem = new ToolStripMenuItem();
       this.helpToolStripMenuItem = new ToolStripMenuItem();
       this.aboutToolStripMenuItem = new ToolStripMenuItem();
       this.folderBrowserDialog1 = new FolderBrowserDialog();
@@ -6078,7 +6102,7 @@ namespace BanjoKazooieLevelEditor
       this.hideUnknownBytesToolStripMenuItem.Size = new Size(267, 22);
       this.hideUnknownBytesToolStripMenuItem.Text = "Hide Unknown Bytes";
       this.hideUnknownBytesToolStripMenuItem.Click += new EventHandler(this.hideUnknownBytesToolStripMenuItem_Click);
-      this.toolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[8]
+      this.toolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[9]
       {
         (ToolStripItem) this.importObjToolStripMenuItem,
         (ToolStripItem) this.modelEditorToolStripMenuItem,
@@ -6087,7 +6111,8 @@ namespace BanjoKazooieLevelEditor
         (ToolStripItem) this.puzzleEditorToolStripMenuItem,
         (ToolStripItem) this.injectorInToolStripMenuItem,
         (ToolStripItem) this.sNSEditorToolStripMenuItem,
-        (ToolStripItem) this.spriteManagerToolStripMenuItem
+        (ToolStripItem) this.spriteManagerToolStripMenuItem,
+        (ToolStripItem) this.runToolStripMenuItem
       });
       this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
       this.toolsToolStripMenuItem.Size = new Size(47, 20);
@@ -6130,6 +6155,12 @@ namespace BanjoKazooieLevelEditor
       this.spriteManagerToolStripMenuItem.Size = new Size(193, 22);
       this.spriteManagerToolStripMenuItem.Text = "Sprite Manager";
       this.spriteManagerToolStripMenuItem.Click += new EventHandler(this.spriteManagerToolStripMenuItem_Click);
+      this.runToolStripMenuItem.Name = "runToolStripMenuItem";
+      this.runToolStripMenuItem.Size = new Size(193, 22);
+      this.runToolStripMenuItem.Text = "Run in Emulator";
+      this.runToolStripMenuItem.Click += new EventHandler(this.runToolStripMenuItem_Click);
+      this.runToolStripMenuItem.ShortcutKeys = Keys.F5;
+      this.runToolStripMenuItem.Enabled = false;
       this.helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[1]
       {
         (ToolStripItem) this.aboutToolStripMenuItem
